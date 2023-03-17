@@ -52,7 +52,7 @@ class TestIcebergUtil {
                 MAPPER.readTree(serdeWithSchema).get("payload"), null,
                 MAPPER.readTree(serdeWithSchema).get("schema"), null);
         Schema schema = e.icebergSchema(defaultPartitionColumn);
-        assertTrue(schema.toString().contains("before: optional struct<2: id: optional int, 3: first_name: optional string, " +
+        assertTrue(schema.toString().contains("before: optional struct<2: id: optional int (), 3: first_name: optional string (), " +
                 "4:"));
     }
 
@@ -75,8 +75,7 @@ class TestIcebergUtil {
                 MAPPER.readTree(unwrapWithArraySchema).get("payload"), null,
                 MAPPER.readTree(unwrapWithArraySchema).get("schema"), null);
         Schema schema = e.icebergSchema(defaultPartitionColumn);
-        assertTrue(schema.asStruct().toString().contains("struct<1: name: optional string, 2: pay_by_quarter: optional list<int>, 4: schedule: optional list<string>, 6:"));
-        System.out.println(schema.asStruct());
+        assertTrue(schema.asStruct().toString().contains("struct<1: name: optional string (), 2: pay_by_quarter: optional list<int> (), 4: schedule: optional list<string> (), 6:"));
         System.out.println(schema.findField("pay_by_quarter").type().asListType().elementType());
         System.out.println(schema.findField("schedule").type().asListType().elementType());
         assertEquals(schema.findField("pay_by_quarter").type().asListType().elementType().toString(), "int");
@@ -105,8 +104,8 @@ class TestIcebergUtil {
                 MAPPER.readTree(unwrapWithGeomSchema).get("payload"), null,
                 MAPPER.readTree(unwrapWithGeomSchema).get("schema"), null);
         Schema schema = e.icebergSchema(defaultPartitionColumn);
-        GenericRecord record = e.asIcebergRecord(schema, defaultPartitionColumn, defaultPartitionTimestamp);
-        assertTrue(schema.toString().contains("g: optional struct<3: wkb: optional string, 4: srid: optional int>"));
+        GenericRecord record = e.asIcebergRecord(schema);
+        assertTrue(schema.toString().contains("g: optional struct<3: wkb: optional string (), 4: srid: optional int ()>"));
         GenericRecord g = (GenericRecord) record.getField("g");
         GenericRecord h = (GenericRecord) record.getField("h");
         assertEquals("AQEAAAAAAAAAAADwPwAAAAAAAPA/", g.get(0, Types.StringType.get().typeId().javaClass()));
