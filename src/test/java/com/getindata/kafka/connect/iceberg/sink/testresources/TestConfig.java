@@ -69,6 +69,11 @@ public class TestConfig {
             return this;
         }
 
+        public Builder withCustomProperty(String key, String value) {
+            properties.put(key, value);
+            return this;
+        }
+
         public IcebergSinkConfiguration build() {
             return new IcebergSinkConfiguration(properties);
         }
