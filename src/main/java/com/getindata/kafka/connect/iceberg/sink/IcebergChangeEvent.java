@@ -15,6 +15,7 @@ import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.types.Type.TypeID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -164,7 +165,19 @@ public class IcebergChangeEvent {
         }
         break;
       case LIST:
-        val = MAPPER.convertValue(node, ArrayList.class);
+        // for now we support two LIST type cases
+        Types.ListType listType = (Types.ListType) field.type();
+        if (listType.elementType().typeId() == TypeID.STRUCT) {
+            List<GenericRecord> structList = new ArrayList<>();
+            Iterator<JsonNode> it = node.iterator();
+            while (it.hasNext()) {
+                structList.add(asIcebergRecord(listType.elementType().asStructType(), it.next()));
+            }
+            val = structList;
+        }
+        else {
+            val = MAPPER.convertValue(node, ArrayList.class);
+        }
         break;
       case MAP:
         val = MAPPER.convertValue(node, Map.class);
@@ -292,15 +305,30 @@ public class IcebergChangeEvent {
             if (items != null && items.has("type")) {
               String listItemType = items.get("type").textValue();
 
-              if (listItemType.equals("struct") || listItemType.equals("array") || listItemType.equals("map")) {
-                throw new RuntimeException("Complex nested array types are not supported," +
+              if (listItemType.equals("array") || listItemType.equals("map")) {
+                throw new RuntimeException("'array' and 'map' nested array types are not supported," +
                                            " array[" + listItemType + "], field " + fieldName);
               }
 
-              Type.PrimitiveType item = icebergFieldType(listItemType);
-              schemaColumns.add(Types.NestedField.optional(
-                  columnId, fieldName, Types.ListType.ofOptional(++columnId, item)));
-            } else {
+              else {
+                if (listItemType.equals("struct")) {
+                  List<Types.NestedField> subSchema = icebergSchema(items, fieldName, columnId+2);
+                  schemaColumns.add(Types.NestedField.optional(columnId,
+                                                               fieldName,
+                                                               Types.ListType.ofOptional(columnId+1,
+                                                                                         Types.StructType.of(subSchema)),
+                                                               ""));
+                  columnId += subSchema.size() + 2;
+                }
+                else {
+                  Type.PrimitiveType item = icebergFieldType(listItemType);
+                  schemaColumns.add(Types.NestedField.optional(
+                      columnId, fieldName, Types.ListType.ofOptional(++columnId, item), ""));
+                }
+              }
+            }
+
+            else {
               throw new RuntimeException("Unexpected Array type for field " + fieldName);
             }
             break;
