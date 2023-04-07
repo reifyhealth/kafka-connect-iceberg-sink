@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,6 +45,7 @@ class TestIcebergUtil {
     final String unwrapWithArraySchema = Testing.Files.readResourceAsString("json/serde-with-array.json");
     final String unwrapWithArraySchema2 = Testing.Files.readResourceAsString("json/serde-with-array2.json");
     final String debeziumTimeCoercionSchema = Testing.Files.readResourceAsString("json/debezium-annotated-schema.json");
+    final String debeziumMetadataSchema = Testing.Files.readResourceAsString("json/debezium-metadata-schema.json");
 
     final String customPartitionColumn = Testing.Files.readResourceAsString("json/custom-partition-column.json");
 
@@ -227,6 +229,36 @@ class TestIcebergUtil {
         assertTrue(schemaString.contains("ship_timestamp: optional string (io.debezium.time.MicroTimestamp)"));
         assertTrue(recordString.contains("2182-08-20"));
         assertTrue(recordString.contains("2182-08-19T21:50:56.016196Z"));
+    }
+
+    @Test
+    public void listStructSchemaHandling()
+      throws JsonProcessingException {
+        IcebergChangeEvent e = new IcebergChangeEvent("test",
+                                          MAPPER.readTree(debeziumMetadataSchema).get("payload"), null,
+                                          MAPPER.readTree(debeziumMetadataSchema).get("schema"), null);
+        Schema schema = e.icebergSchema();
+        String schemaString = schema.toString();
+
+        GenericRecord record = e.asIcebergRecord(schema);
+
+        assertTrue(schemaString.contains("data_collections: optional list<struct"));
+
+        GenericRecord innerRecord = (GenericRecord) ((ArrayList) record.getField("data_collections")).get(0);
+        Object value = innerRecord.getField("data_collection");
+        assertTrue(value.equals("public.mine"));
+
+        value = innerRecord.getField("event_count");
+        assertTrue((long) value == 1);
+
+        value = record.getField("status");
+        assertTrue(((String) value).equals("END"));
+
+        value = record.getField("id");
+        assertTrue(((String) value).equals("12117:67299632"));
+
+        value = record.getField("ts_ms");
+        assertTrue(((long) value) == 1680821545908L);
     }
 
     @Test
