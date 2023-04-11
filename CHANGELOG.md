@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Added Iceberg coercion support for Avro Array<Struct> types. Supports Debezium `data_collections` metadata.
+
 ## [0.3.1] - 2023-04-06
 
 -   Add `iceberg.format-version` config setting to indicate which Iceberg table format version is used.
