@@ -107,7 +107,7 @@ class TestIcebergUtil {
                 MAPPER.readTree(unwrapWithGeomSchema).get("payload"), null,
                 MAPPER.readTree(unwrapWithGeomSchema).get("schema"), null);
         Schema schema = e.icebergSchema(defaultPartitionColumn);
-        GenericRecord record = e.asIcebergRecord(schema);
+        GenericRecord record = e.asIcebergRecord(schema, defaultPartitionColumn, defaultPartitionTimestamp);
         assertTrue(schema.toString().contains("g: optional struct<3: wkb: optional string (), 4: srid: optional int ()>"));
         GenericRecord g = (GenericRecord) record.getField("g");
         GenericRecord h = (GenericRecord) record.getField("h");
@@ -174,8 +174,8 @@ class TestIcebergUtil {
         IcebergChangeEvent e = new IcebergChangeEvent("test",
                                           MAPPER.readTree(debeziumTimeCoercionSchema).get("payload"), null,
                                           MAPPER.readTree(debeziumTimeCoercionSchema).get("schema"), null);
-        Schema schema = e.icebergSchema();
-        GenericRecord record = e.asIcebergRecord(schema);
+        Schema schema = e.icebergSchema(defaultPartitionColumn);
+        GenericRecord record = e.asIcebergRecord(schema, defaultPartitionColumn, "ts_ms");
         String schemaString = schema.toString();
         String recordString = record.toString();
 
@@ -197,8 +197,8 @@ class TestIcebergUtil {
         IcebergChangeEvent e = new IcebergChangeEvent("test",
                                           MAPPER.readTree(debeziumTimeCoercionSchema).get("payload"), null,
                                           MAPPER.readTree(debeziumTimeCoercionSchema).get("schema"), null);
-        Schema schema = e.icebergSchema();
-        GenericRecord record = e.asIcebergRecord(schema);
+        Schema schema = e.icebergSchema(defaultPartitionColumn);
+        GenericRecord record = e.asIcebergRecord(schema, defaultPartitionColumn, "ts_ms");
         String schemaString = schema.toString();
         String recordString = record.toString();
 
@@ -220,8 +220,8 @@ class TestIcebergUtil {
         IcebergChangeEvent e = new IcebergChangeEvent("test",
                                           MAPPER.readTree(debeziumTimeCoercionSchema).get("payload"), null,
                                           MAPPER.readTree(debeziumTimeCoercionSchema).get("schema"), null);
-        Schema schema = e.icebergSchema();
-        GenericRecord record = e.asIcebergRecord(schema);
+        Schema schema = e.icebergSchema(defaultPartitionColumn);
+        GenericRecord record = e.asIcebergRecord(schema, defaultPartitionColumn, "ts_ms");
         String schemaString = schema.toString();
         String recordString = record.toString();
 
@@ -237,10 +237,10 @@ class TestIcebergUtil {
         IcebergChangeEvent e = new IcebergChangeEvent("test",
                                           MAPPER.readTree(debeziumMetadataSchema).get("payload"), null,
                                           MAPPER.readTree(debeziumMetadataSchema).get("schema"), null);
-        Schema schema = e.icebergSchema();
+        Schema schema = e.icebergSchema(defaultPartitionColumn);
         String schemaString = schema.toString();
 
-        GenericRecord record = e.asIcebergRecord(schema);
+        GenericRecord record = e.asIcebergRecord(schema, defaultPartitionColumn, defaultPartitionTimestamp);
 
         assertTrue(schemaString.contains("data_collections: optional list<struct"));
 
